@@ -1,0 +1,69 @@
+---
+title: "Machine Learning - Course Project"
+author: "Reem Soliman"
+date: "April 28, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+library(caret)
+library(randomForest)
+```
+
+## Loading and Exploring the data
+
+```{r}
+setwd("C:/DataScienceProgram/Machine Learning/week4")
+data <-  read.csv("pml-training.csv")
+pml_testing <- read.csv("pml-testing.csv")
+dim(data)
+```
+
+## Split the data
+
+Split the training data into training, cross validation
+
+```{r}
+inTrain <- createDataPartition(y=data$classe,p=0.75, list=FALSE)
+training <- data[inTrain,]
+testing <- data[-inTrain,]
+```
+## Pre Processing the data
+```{r}
+#remove all near zero varaibles
+nzv <- nearZeroVar(training)
+training <- training[,-nzv]
+testing <- testing[,-nzv]
+
+dim(training)
+#remove almost NA variables
+mostlyNA <- sapply(training, function(x) mean(is.na(x))) > 0.95  
+training <- training[, mostlyNA==F]  
+testing <- testing[, mostlyNA==F]  
+dim(training)
+```
+```{r}
+#remove the first 5 variables that are  not affecting the prediction
+training <- training[, -(1:5)]
+testing <- testing[, -(1:5)]
+```
+
+
+## Using Random Forest Algorithm
+```{r}
+set.seed(300)
+
+rfModel <- randomForest(classe ~ ., data= training)
+rfPred <- predict(rfModel, testing)
+summary(rfPred)
+confusionMatrix(testing$classe, rfPred)  
+```
+Accuracy : 0.9982 which is great for me.
+## Apply the model to pml_testing
+```{r}
+preds <- predict(rfModel, pml_testing)
+summary(preds)
+print(preds)
+```
